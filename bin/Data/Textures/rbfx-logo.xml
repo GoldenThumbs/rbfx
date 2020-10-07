@@ -1,3 +1,7 @@
 <texture>
     <quality low="0" />
+<<<<<<< HEAD
 </texture>
+=======
+</texture>
+>>>>>>> f87a01dec... Add SSAO sample
