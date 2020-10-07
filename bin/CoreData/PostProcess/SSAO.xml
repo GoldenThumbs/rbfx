@@ -1,4 +1,5 @@
 <renderpath>
+<<<<<<< HEAD
     <rendertarget name="Pos" tag="SSAO" sizedivisor="2 2" format="rgba32f" />
     <rendertarget name="SSAO" tag="SSAO" sizedivisor="2 2" format="rgba" />
     <rendertarget name="BlurH" tag="SSAO" sizedivisor="2 2" format="rgba" />
@@ -37,4 +38,51 @@
         <texture unit="diffuse" name="SSAO" />
     </command>
 
+=======
+    <rendertarget name="pos" tag="SSAO" sizedivisor="1 1" format="rgba32f" />
+    <rendertarget name="nrm" tag="SSAO" sizedivisor="1 1" format="rgb" />
+    <rendertarget name="ao" tag="SSAO" sizedivisor="2 2" format="r" />
+
+    <command type="quad" tag="SSAO" vs="SSAO" ps="SSAO" psdefines="GEN_POS" output="pos">
+        <texture unit="0" name="depth" />
+    </command>
+
+    <command type="quad" tag="SSAO" vs="SSAO" ps="SSAO" psdefines="GEN_NRM" output="nrm">
+        <texture unit="0" name="pos" />
+    </command>
+
+    <command type="quad" tag="SSAO" vs="SSAO" ps="SSAO" psdefines="GEN_AO" output="ao">
+        <parameter name="Radius" value="0.2" />
+        <parameter name="Scale" value="1.5" />
+        <parameter name="Bias" value="0.0" />
+        <parameter name="Strength" value="1.0" />
+
+        <texture unit="0" name="pos" />
+        <texture unit="1" name="nrm" />
+        <texture unit="2" name="Textures/DthrNrm.png" />
+    </command>
+
+    <rendertarget name="BlurH" tag="Blur" sizedivisor="2 2" format="rgba" filter="true" />
+    <rendertarget name="BlurV" tag="Blur" sizedivisor="2 2" format="rgba" filter="true" />
+
+    <command type="quad" tag="Blur" vs="Blur" ps="Blur" psdefines="BLUR3" output="BlurH">
+        <parameter name="BlurDir" value="1.0 0.0" />
+        <parameter name="BlurRadius" value="2.0" />
+        <parameter name="BlurSigma" value="2.0" />
+        <texture unit="diffuse" name="ao" />
+    </command>
+    <command type="quad" tag="Blur" vs="Blur" ps="Blur" psdefines="BLUR3" output="BlurV">
+        <parameter name="BlurDir" value="0.0 1.0" />
+        <parameter name="BlurRadius" value="2.0" />
+        <parameter name="BlurSigma" value="2.0" />
+        <texture unit="diffuse" name="BlurH" />
+    </command>
+
+    <command type="quad" tag="SSAO" vs="SSAO" ps="SSAO" output="viewport">
+        <texture unit="0" name="pos" />
+        <texture unit="1" name="viewport" />
+        <texture unit="2" name="BlurV" />
+        <texture unit="3" name="nrm" />
+    </command>
+>>>>>>> 70dd607eb... Add SSAO sample
 </renderpath>
