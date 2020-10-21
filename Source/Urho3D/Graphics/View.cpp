@@ -738,6 +738,8 @@ void View::SetCameraShaderParameters(Camera* camera)
     graphics_->SetShaderParameter(VSP_VIEWINV, cameraEffectiveTransform);
     graphics_->SetShaderParameter(VSP_VIEW, camera->GetView());
     graphics_->SetShaderParameter(PSP_CAMERAPOS, cameraEffectiveTransform.Translation());
+    graphics_->SetShaderParameter(PSP_VIEWINV, cameraEffectiveTransform);
+    graphics_->SetShaderParameter(PSP_VIEW, camera->GetView());
 
     float nearClip = camera->GetNearClip();
     float farClip = camera->GetFarClip();
@@ -780,6 +782,7 @@ void View::SetCameraShaderParameters(Camera* camera)
 #endif
 
     graphics_->SetShaderParameter(VSP_VIEWPROJ, projection * camera->GetView());
+    graphics_->SetShaderParameter(PSP_VIEWPROJ, projection * camera->GetView());
 
     // If in a scene pass and the command defines shader parameters, set them now
     if (passCommand_)
@@ -2195,6 +2198,7 @@ void View::DrawFullscreenQuad(bool setIdentityProjection)
 
         graphics_->SetShaderParameter(VSP_MODEL, model);
         graphics_->SetShaderParameter(VSP_VIEWPROJ, projection);
+        graphics_->SetShaderParameter(PSP_VIEWPROJ, projection);
     }
     else
         graphics_->SetShaderParameter(VSP_MODEL, Light::GetFullscreenQuadTransform(camera_));
