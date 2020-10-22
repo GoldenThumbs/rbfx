@@ -24,61 +24,75 @@ varying vec3 vFarRay;
     uniform vec2 cBlurDir;
     uniform float cSharpness;
 
-    float GetAO(const vec3 pos)
+    float GetAO(const vec2 ray, const vec3 pos, const vec3 nrm)
     {
-        vec4 uv = vec4(pos, 1.0);
-        uv = uv * (cViewInvPS * cViewProjPS);
-        uv.xyz /= uv.w;
-        uv.xyz = uv.xyz * 0.5 + 0.5;
-        float d = texture2D(sPos1, uv.xy).z;
-        float diff = max(pos.z - d, 0);
-        float rangeCheck = 1.0 - smoothstep(cBias, cScale, diff);
-        return step(cBias, diff) * rangeCheck;
+        // AO calculation taken from: https://github.com/nvpro-samples/gl_ssao/blob/master/hbao.frag.glsl#L182
+        vec3 diff = texture2D(sPos1, vTexCoord + ray).rgb - pos;
+        vec3 v = normalize(diff);
+        float VdV = dot(v, v);
+        float NdV = dot(nrm, v) * 1.0/sqrt(VdV);
+
+        float rangeCheck = 1.0 - smoothstep(cBias, cScale, length(diff));
+        return clamp(NdV - cBias,0,1) * rangeCheck * cStrength;
     }
 
-    vec3 GetNrm(const vec3 p0)
+    vec3 GetNrm(const vec3 p0, out vec4 edgesLRTB)
     {
+        // Normal generation based on: https://github.com/GameTechDev/ASSAO/blob/master/Projects/ASSAO/ASSAO/ASSAO.hlsl#L279
         vec3 p1X = texture2D(sPos1, vTexCoord+vec2(cSSAOInvSize.x, 0.0)).rgb - p0;
-        vec3 p2X = p0 - texture2D(sPos1, vTexCoord-vec2(cSSAOInvSize.x, 0.0)).rgb;
+        vec3 p2X = texture2D(sPos1, vTexCoord-vec2(cSSAOInvSize.x, 0.0)).rgb - p0;
 
         vec3 p1Y = texture2D(sPos1, vTexCoord+vec2(0.0, cSSAOInvSize.y)).rgb - p0;
-        vec3 p2Y = p0 - texture2D(sPos1, vTexCoord-vec2(0.0, cSSAOInvSize.y)).rgb;
+        vec3 p2Y = texture2D(sPos1, vTexCoord-vec2(0.0, cSSAOInvSize.y)).rgb - p0;
 
-        vec3 pX = mix(p1X, p2X, abs(min(p1X.z, p2X.z)));
-        vec3 pY = mix(p1Y, p2Y, abs(min(p1Y.z, p2Y.z)));
-        vec3 n = cross(pX, pY);
+        vec4 edges = vec4(p1X.z, p2X.z, p1Y.z, p2Y.z);
+        vec4 edgesSA = edges + edges.yxwz;
+        edges = min( abs( edges ), abs( edgesSA ) );
+        edges = clamp( ( 1.3 - edges / (p0.z * 0.040) ) ,0,1);
 
-        return -normalize(n);
+        vec4 AccNrm = vec4(edges.x*edges.z, edges.z*edges.y, edges.y*edges.w, edges.w*edges.x);
+
+        p1X = normalize(p1X);
+        p2X = normalize(p2X);
+        p1Y = normalize(p1Y);
+        p2Y = normalize(p2Y);
+
+        vec3 normal = vec3(0, 0, -0.0005);
+        normal += AccNrm.x * cross(p1X, p1Y);
+        normal += AccNrm.y * cross(p1Y, p2X);
+        normal += AccNrm.z * cross(p2X, p2Y);
+        normal += AccNrm.w * cross(p2Y, p1X);
+
+        edgesLRTB = edges;
+        return -normalize(normal);
     }
 
-    const float KERNEL_RADIUS = 3;
+    const float KERNEL_RADIUS = 4;
 
-    float BlurFunction(vec2 uv, float r, float center_c, float center_d, inout float w_total)
+    float BlurFunction(vec2 uv, float r, float center_c, float center_d, vec2 center_n, inout float w_total)
     {
-        vec2  aoz = texture2D(sDiffMap, uv ).xy;
-        float c = aoz.x;
-        float d = aoz.y;
+        vec4 aozn = texture2D(sDiffMap, uv);
+        float c = aozn.x;
+        float d = aozn.y;
+        vec2 n = aozn.zw * 2.0 - 1.0;
 
         const float BlurSigma = float(KERNEL_RADIUS) * 0.5;
         const float BlurFalloff = 1.0 / (2.0*BlurSigma*BlurSigma);
 
-        float ddiff = (d - center_d) * cSharpness;
-        float w = exp2(-r*r*BlurFalloff - ddiff*ddiff);
+        float ddiff = (center_d - d) * cSharpness;
+        float ndiff = distance(center_n, n) * cSharpness;
+        float close = abs(ndiff - ddiff);
+
+        float w = exp2(-r*r*BlurFalloff - close*close);
         w_total += w;
 
         return c*w;
     }
 
-    const int samples = 16;
-    vec3 kernel[samples] = vec3[](
-        vec3( 0.5381, 0.1856,-0.4319), vec3( 0.1379, 0.2486, 0.4430),
-        vec3( 0.3371, 0.5679,-0.0057), vec3(-0.6999,-0.0451,-0.0019),
-        vec3( 0.0689,-0.1598,-0.8547), vec3( 0.0560, 0.0069,-0.1843),
-        vec3(-0.0146, 0.1402, 0.0762), vec3( 0.0100,-0.1924,-0.0344),
-        vec3(-0.3577,-0.5301,-0.4358), vec3(-0.3169, 0.1063, 0.0158),
-        vec3( 0.0103,-0.5869, 0.0046), vec3(-0.0897,-0.4940, 0.3287),
-        vec3( 0.7119,-0.0154,-0.0918), vec3(-0.0533, 0.0596,-0.5411),
-        vec3( 0.0352,-0.0631, 0.5460), vec3(-0.4776, 0.2847,-0.0271)
+    const int samples = 4;
+    vec2 kernel[samples] = vec2[](
+        vec2( 1, 0), vec2(0, 1),
+        vec2(-1, 0), vec2(0,-1)
     );
 
 #endif
@@ -99,43 +113,43 @@ void VS()
 void PS()
 {   
     #if defined(GEN_POS)
-        gl_FragColor.rgb = texture2D(sDepthBuffer, vTexCoord).r * vFarRay/vFarRay.z;
+        gl_FragColor.rgb = texelFetch(sDepthBuffer, ivec2(gl_FragCoord.xy * 2.0), 0).r * vFarRay/vFarRay.z;
     #elif defined(GEN_AO)
-        // SSAO code partially based on: http://theorangeduck.com/page/pure-depth-ssao
+        // SSAO code partially based on: https://www.gamedev.net/articles/programming/graphics/a-simple-and-practical-approach-to-ssao-r2753/
         vec3 pos = texture2D(sPos1, vTexCoord).rgb;
-        vec3 nrm = GetNrm(pos);
-        vec3 rnd = normalize(texture2D(sRnd0, vTexCoord / (cNoiseScale * cSSAOInvSize)).xyz);
+        vec4 edgesLRTB;
+        vec3 nrm = GetNrm(pos, edgesLRTB);
+        vec3 rnd = texture2D(sRnd0, vTexCoord / (cNoiseScale * cSSAOInvSize)).xyz * 2.0 - 1.0;
 
-        float rad = cRadius / cFarClipPS;
+        float rad = cRadius / (pos.z * vFarRay.z);
 
         float ao = 0.0;
         for (int i = 0; i < samples; ++i)
         {
-            vec3 ray = reflect(kernel[i], rnd);
-            ray = pos + sign(dot(ray, nrm)) * ray * rad;
+            vec2 coord0 = reflect(kernel[i], rnd.xy)*rad;
+            vec2 coord1 = vec2(coord0.x*0.707 - coord0.y*0.707, coord0.x*0.707 + coord0.y*0.707);
 
-            ao += GetAO(ray) * cStrength;
+            ao += GetAO(coord0*0.25, pos, nrm); 
+            ao += GetAO(coord1*0.50, pos, nrm); 
+            ao += GetAO(coord0*0.75, pos, nrm); 
+            ao += GetAO(coord1, pos, nrm); 
         }
-        ao /= float(samples);
+        ao /= float(samples) * 4.0;
         ao = 1.0-clamp(ao, 0, 1);
-        gl_FragColor.rg = vec2(ao, pos.z);
+        gl_FragColor = vec4(ao, pos.z, nrm.xy*0.5+0.5);
     #elif defined(BLUR)
-        // Bilateral Blur code from: https://github.com/nvpro-samples/gl_ssao
-        vec2 cntr = texture2D(sDiffMap, vTexCoord).rg;
+        // Bilateral Blur code from: https://github.com/nvpro-samples/gl_ssao/blob/master/hbao_blur.frag.glsl#L48
+        vec4 cntr = texture2D(sDiffMap, vTexCoord);
+        vec2 nrm = cntr.zw * 2.0 - 1.0;
         float ao = cntr.r;
         float w = 1.0;
-        for (float r = 1; r <= KERNEL_RADIUS; ++r)
+        for (float r = 1; r <= KERNEL_RADIUS/2; ++r)
         {
-            vec2 uv = vTexCoord + (cGBufferInvSize * cBlurDir) * r;
-            ao += BlurFunction(uv, r, cntr.x, cntr.y, w);  
+            vec2 offset = (cBlurHInvSize * cBlurDir) * r;
+            ao += BlurFunction(vTexCoord + offset, r, cntr.x, cntr.y, nrm, w);
+            ao += BlurFunction(vTexCoord - offset, r, cntr.x, cntr.y, nrm, w);  
         }
-
-        for (float r = 1; r <= KERNEL_RADIUS; ++r)
-        {
-            vec2 uv = vTexCoord - (cGBufferInvSize * cBlurDir) * r;
-            ao += BlurFunction(uv, r, cntr.x, cntr.y, w);  
-        }
-        gl_FragColor.rg = vec2(ao/w, cntr.y);
+        gl_FragColor = vec4(ao/w, cntr.yzw);
     #elif defined(APPLY)
         float ao = texture2D(sDiffMap, vTexCoord).r;
         gl_FragColor.rgb = vec3(ao);
