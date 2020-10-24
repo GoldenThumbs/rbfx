@@ -1,40 +1,50 @@
 <renderpath>
-    <rendertarget name="Pos" tag="SSAO" sizedivisor="2 2" format="rgba32f" />
-    <rendertarget name="SSAO" tag="SSAO" sizedivisor="2 2" format="rgba" />
-    <rendertarget name="BlurH" tag="SSAO" sizedivisor="2 2" format="rgba" />
+    <rendertarget name="HalfDepth" tag="SSAO" sizedivisor="2 2" format="lineardepth" />
+    <rendertarget name="SSAO" tag="SSAO" sizedivisor="2 2" format="r" />
+    <rendertarget name="BlurH" tag="SSAO" sizedivisor="1 1" format="r" />
+    <rendertarget name="BlurV" tag="SSAO" sizedivisor="1 1" format="r" />
 
-    <command type="quad" tag="SSAO" vs="SSAO" ps="SSAO" psdefines="GEN_POS" output="Pos">
+    <command type="quad" tag="SSAO" vs="SSAO" ps="SSAO" psdefines="SCALE_DEPTH" output="HalfDepth">
         <texture unit="depth" name="depth" />
+        <parameter name="Downscale" value="2" />
     </command>
 
-    <command type="quad" tag="SSAO" vs="SSAO" ps="SSAO" psdefines="GEN_AO" output="SSAO">
+    <command type="quad" tag="SSAO" vs="SSAO" ps="SSAO" psdefines="GEN_AO GEN_NRM" output="SSAO">
         <texture unit="0" name="Textures/Random.png" />
-        <texture unit="1" name="Pos" />
+        <texture unit="1" name="HalfDepth" />
 
-        <parameter name="Radius" value="0.15" />
-        <parameter name="Scale" value="0.002" />
-        <parameter name="Bias" value="0.0" />
-        <parameter name="Strength" value="1.5" />
+        <parameter name="Radius" value="0.25" />
+        <parameter name="Scale" value="0.025" />
+        <parameter name="Bias" value="0.005" />
+        <parameter name="Strength" value="1.8" />
 
         <parameter name="NoiseScale" value="16 16" />>
     </command>
 
     <command type="quad" tag="SSAO" vs="SSAO" ps="SSAO" psdefines="BLUR" output="BlurH">
         <texture unit="diffuse" name="SSAO" />
+        <texture unit="depth" name="depth" />
+        <texture unit="1" name="HalfDepth" />
 
-        <parameter name="BlurDir" value="2 0" />
-        <parameter name="Sharpness" value="1" />
+        <parameter name="BlurDir" value="4 0" />
+        <parameter name="Sharpness" value="10" />
     </command>
 
-    <command type="quad" tag="SSAO" vs="SSAO" ps="SSAO" psdefines="BLUR" output="SSAO">
+    <command type="quad" tag="SSAO" vs="SSAO" ps="SSAO" psdefines="BLUR" output="BlurV">
         <texture unit="diffuse" name="BlurH" />
+        <texture unit="depth" name="depth" />
+        <texture unit="1" name="HalfDepth" />
 
-        <parameter name="BlurDir" value="0 2" />
-        <parameter name="Sharpness" value="1" />
+        <parameter name="BlurDir" value="0 4" />
+        <parameter name="Sharpness" value="10" />
     </command>
+
+    <!--command type="quad" tag="SSAO" vs="CopyFramebuffer" ps="CopyFramebuffer">
+        <texture unit="diffuse" name="SSAO" />
+    </command-->    
 
     <command type="quad" tag="SSAO" vs="SSAO" ps="SSAO" psdefines="APPLY" blend="multiply">
-        <texture unit="diffuse" name="SSAO" />
+        <texture unit="diffuse" name="BlurV" />
     </command>
 
 </renderpath>
