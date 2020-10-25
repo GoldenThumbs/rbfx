@@ -26,8 +26,8 @@
         <texture unit="depth" name="depth" />
         <texture unit="1" name="HalfDepth" />
 
-        <parameter name="BlurDir" value="4 0" />
-        <parameter name="Sharpness" value="30" />
+        <parameter name="BlurDir" value="2 2" />
+        <parameter name="Sharpness" value="10" />
     </command>
 
     <command type="quad" tag="SSAO" vs="SSAO" ps="SSAO" psdefines="BLUR" output="BlurV">
@@ -35,8 +35,8 @@
         <texture unit="depth" name="depth" />
         <texture unit="1" name="HalfDepth" />
 
-        <parameter name="BlurDir" value="0 3" />
-        <parameter name="Sharpness" value="30" />
+        <parameter name="BlurDir" value="-2 2" />
+        <parameter name="Sharpness" value="10" />
     </command>    
 
     <command type="quad" tag="SSAO" vs="SSAO" ps="SSAO" psdefines="APPLY">
