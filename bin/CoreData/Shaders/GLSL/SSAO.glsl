@@ -51,7 +51,7 @@ void VS()
         uniform float cStrength;
         uniform vec2 cNoiseScale;
 
-        const int samples = 4;
+        const int samples = 8;
         const int steps = 4;
         //const vec2 kernel[samples] = vec2[](
         //    vec2( 1, 0), vec2( 0, 1),
@@ -137,7 +137,7 @@ void VS()
         uniform vec2 cBlurDir;
         uniform float cSharpness;
 
-        const float KERNEL_RADIUS = 2;
+        const float KERNEL_RADIUS = 4;
 
         float BlurFunction(vec2 uv, float r, float center_d, inout float w_total)
         {
