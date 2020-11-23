@@ -1498,9 +1498,6 @@ void Renderer::OptimizeLightByStencil(Light* light, Camera* camera)
         graphics_->SetShaderParameter(VSP_VIEWINV, camera->GetEffectiveWorldTransform());
         graphics_->SetShaderParameter(VSP_VIEWPROJ, projection * view);
         graphics_->SetShaderParameter(VSP_MODEL, light->GetVolumeTransform(camera));
-        graphics_->SetShaderParameter(PSP_VIEW, view);
-        graphics_->SetShaderParameter(PSP_VIEWINV, camera->GetEffectiveWorldTransform());
-        graphics_->SetShaderParameter(PSP_VIEWPROJ, projection * view);
 
         geometry->Draw(graphics_);
 

@@ -552,7 +552,6 @@ void Graphics::Clear(ClearTargetFlags flags, const Color& color, float depth, un
         SetShaders(GetShader(VS, "ClearFramebuffer"), GetShader(PS, "ClearFramebuffer"));
         SetShaderParameter(VSP_MODEL, model);
         SetShaderParameter(VSP_VIEWPROJ, projection);
-        SetShaderParameter(PSP_VIEWPROJ, projection);
         SetShaderParameter(PSP_MATDIFFCOLOR, color);
 
         geometry->Draw(this);
