@@ -651,6 +651,9 @@ void DebugRenderer::Render()
     graphics->SetShaderParameter(VSP_VIEW, view_);
     graphics->SetShaderParameter(VSP_VIEWINV, view_.Inverse());
     graphics->SetShaderParameter(VSP_VIEWPROJ, gpuProjection_ * view_);
+    graphics->SetShaderParameter(PSP_VIEW, view_);
+    graphics->SetShaderParameter(PSP_VIEWINV, view_.Inverse());
+    graphics->SetShaderParameter(PSP_VIEWPROJ, gpuProjection_ * view_);
     graphics->SetShaderParameter(PSP_MATDIFFCOLOR, Color(1.0f, 1.0f, 1.0f, 1.0f));
     graphics->SetVertexBuffer(vertexBuffer_);
 
