@@ -1,43 +1,49 @@
 <renderpath>
 
     <rendertarget name="halfDepth" sizedivisor="2 2" format="r32f" />
-
-    <rendertarget name="pos" sizedivisor="2 2" format="rgba32f" />
-    <rendertarget name="ao" sizedivisor="2 2" format="rgb" />
-    <rendertarget name="upscale" sizedivisor="1 1" format="rgb" />
+    <rendertarget name="ao" sizedivisor="2 2" format="l" />
+    <rendertarget name="blur" sizedivisor="1 1" format="l" />
 
     <command type="quad" tag="SSAO" vs="SSAO" ps="SSAO" psdefines="DOWNRES_DEPTH" output="halfDepth">
         <texture unit="1" name="depth" />
     </command>
 
-    <command type="quad" tag="SSAO" vs="SSAO" ps="SSAO" psdefines="GEN_POS" output="pos">
-        <texture unit="1" name="halfDepth" />
-    </command>
-
-    <command type="quad" tag="SSAO" vs="SSAO" ps="SSAO" psdefines="GEN_AO" output="ao">
+    <command type="quad" tag="SSAO" vs="SSAO" ps="SSAO" psdefines="GEN_AO" output="viewport" blend="multiply">
         <texture unit="0" name="Textures/Random.png" />
-        <texture unit="1" name="pos" />
+        <texture unit="1" name="depth" />
 
-        <parameter name="Radius" value="0.45" />
+        <parameter name="Radius" value="0.26" />
         <parameter name="Bias" value="0.025" />
         <parameter name="Strength" value="1.25" />
 
         <parameter name="NoiseScale" value="4 4" />
     </command>
 
+    <!--command type="quad" tag="SSAO" vs="CopyFramebuffer" ps="CopyFramebuffer">
+        <texture unit="0" name="ao" />
+    </command-->
+
     <!-- Bilateral blur kind of looks gross, lots of flickering. Even worse when trying to use it to upscale the AO buffer -->
     
-    <command type="quad" tag="SSAO" vs="SSAO" ps="SSAO" psdefines="GEN_BLUR HWDEPTH" output="upscale">
+    <!--command type="quad" tag="SSAO" vs="SSAO" ps="SSAO" psdefines="GEN_BLUR" output="blur">
         <parameter name="BlurDir" value="1 0" />
 
         <texture unit="0" name="ao" />
         <texture unit="1" name="halfDepth" />
+        <texture unit="2" name="depth" />
     </command>
 
     <command type="quad" tag="SSAO" vs="SSAO" ps="SSAO" psdefines="GEN_BLUR" blend="multiply">
         <parameter name="BlurDir" value="0 1" />
 
-        <texture unit="0" name="upscale" />
+        <texture unit="0" name="blur" />
         <texture unit="1" name="halfDepth" />
-    </command>
+        <texture unit="2" name="depth" />
+    </command-->
+
+    <!--command type="quad" tag="SSAO" vs="SSAO" ps="SSAO" psdefines="UPSAMPLE" blend="replace">
+        <texture unit="0" name="ao" />
+        <texture unit="1" name="halfDepth" />
+        <texture unit="2" name="depth" />
+    </command-->
 </renderpath>
