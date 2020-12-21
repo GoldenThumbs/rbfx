@@ -77,7 +77,7 @@ void SSAODemo::CreateScene()
 
     scene_ = new Scene(context_);
 
-    SharedPtr<File> file = cache->GetFile("Scenes/sponza.xml");
+    SharedPtr<File> file = cache->GetFile("Scenes/BakedLightingExample.xml");
     scene_->LoadXML(*file);
 
     // Create the camera. Set far clip to match the fog. Note: now we actually create the camera node outside
@@ -89,12 +89,11 @@ void SSAODemo::CreateScene()
     // Set an initial position for the camera scene node above the ground
     cameraNode_->SetPosition(Vector3(0.0f, 2.0f, 0.0f));
 
-    renderer->SetDefaultRenderPath(cache->GetResource<XMLFile>("RenderPaths/ForwardDepth.xml"));
-
     SharedPtr<Viewport> viewport(new Viewport(context_, scene_, camera));
     renderer->SetViewport(0, viewport);
 
-    SharedPtr<RenderPath> effectRenderPath = viewport->GetRenderPath()->Clone();
+    RenderPath* effectRenderPath = new RenderPath();
+    effectRenderPath->Load(cache->GetResource<XMLFile>("RenderPaths/Deferred.xml"));
     effectRenderPath->Append(cache->GetResource<XMLFile>("PostProcess/SSAO.xml"));
     viewport->SetRenderPath(effectRenderPath);
 }
