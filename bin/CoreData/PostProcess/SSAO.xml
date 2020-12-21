@@ -8,13 +8,14 @@
         <texture unit="1" name="depth" />
     </command>
 
-    <command type="quad" tag="SSAO" vs="SSAO" ps="SSAO" psdefines="GEN_AO" output="viewport" blend="multiply">
+    <command type="quad" tag="SSAO" vs="SSAO" ps="SSAO" psdefines="GEN_AO" output="ao">
         <texture unit="0" name="Textures/Random.png" />
-        <texture unit="1" name="depth" />
+        <texture unit="1" name="halfDepth" />
+        <texture unit="2" name="normal" />
 
-        <parameter name="Radius" value="0.26" />
-        <parameter name="Bias" value="0.025" />
-        <parameter name="Strength" value="1.25" />
+        <parameter name="Radius" value="0.35" />
+        <parameter name="Bias" value="0" />
+        <parameter name="Strength" value="1" />
 
         <parameter name="NoiseScale" value="4 4" />
     </command>
@@ -25,7 +26,7 @@
 
     <!-- Bilateral blur kind of looks gross, lots of flickering. Even worse when trying to use it to upscale the AO buffer -->
     
-    <!--command type="quad" tag="SSAO" vs="SSAO" ps="SSAO" psdefines="GEN_BLUR" output="blur">
+    <command type="quad" tag="SSAO" vs="SSAO" ps="SSAO" psdefines="GEN_BLUR" output="blur">
         <parameter name="BlurDir" value="1 0" />
 
         <texture unit="0" name="ao" />
@@ -39,7 +40,7 @@
         <texture unit="0" name="blur" />
         <texture unit="1" name="halfDepth" />
         <texture unit="2" name="depth" />
-    </command-->
+    </command>
 
     <!--command type="quad" tag="SSAO" vs="SSAO" ps="SSAO" psdefines="UPSAMPLE" blend="replace">
         <texture unit="0" name="ao" />
